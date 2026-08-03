@@ -311,6 +311,8 @@ const ClipboardIndicator = GObject.registerClass({
             this.menu.addMenuItem(this.scrollViewMenuSection);
         }
 
+        this.menu.box.add_style_class_name('clipboard-indicator-popup');
+
         // Private mode switch
         this.privateModeMenuItem = new PopupMenu.PopupSwitchMenuItem(
             _("Private mode"), PRIVATEMODE, { reactive: true });
@@ -605,6 +607,56 @@ const ClipboardIndicator = GObject.registerClass({
         }
     }
 
+    #buildItemActionMenu (menuItem, entry) {
+        const actionMenu = new PopupMenu.PopupMenu(menuItem.moreBtn, 0, St.Side.TOP);
+        actionMenu.actor.add_style_class_name('clipboard-indicator-item-menu');
+        Main.uiGroup.add_child(actionMenu.actor);
+        actionMenu.actor.hide();
+
+        const addAction = (label, iconName, visible, callback) => {
+            if (!visible) return;
+
+            const item = new PopupMenu.PopupMenuItem(label);
+            item.insert_child_at_index(new St.Icon({
+                icon_name: iconName,
+                style_class: 'clipboard-menu-icon',
+                y_align: Clutter.ActorAlign.CENTER
+            }), 0);
+            item.connect('activate', () => {
+                actionMenu.close();
+                callback();
+            });
+            actionMenu.addMenuItem(item);
+        };
+
+        addAction(_('Paste'), 'edit-paste-symbolic', PASTE_BUTTON, () => this.#pasteItem(menuItem));
+        addAction(entry.isFavorite() ? _('Unpin') : _('Pin'),
+            entry.isFavorite() ? 'view-unpin-symbolic' : 'view-pin-symbolic',
+            SHOW_PIN_BUTTON,
+            () => this._favoriteToggle(menuItem));
+        addAction(_('Edit'), 'document-edit-symbolic', SHOW_EDIT_BUTTON && entry.isText(), () => this.#showEditDialog(menuItem));
+        addAction(_('Preview'), 'image-x-generic-symbolic', SHOW_PREVIEW_BUTTON && entry.isImage(), () => this.#showImagePreview(entry));
+        addAction(_('Tag'), 'user-bookmarks-symbolic', SHOW_TAG_BUTTON, () => this.#showTagDialog(menuItem));
+        addAction(_('Delete'), 'edit-delete-symbolic', SHOW_DELETE_BUTTON, () => {
+            if (menuItem.entry.isFavorite() && CONFIRM_ON_PINNED_DELETE)
+                this._confirmRemovePinnedEntry(menuItem);
+            else
+                this._removeEntry(menuItem, 'delete');
+        });
+
+        return actionMenu;
+    }
+
+    #refreshItemActionMenu (menuItem) {
+        if (!menuItem.actionMenu) return;
+
+        menuItem.actionMenu.destroy();
+        menuItem.actionMenu = this.#buildItemActionMenu(menuItem, menuItem.entry);
+
+        const hasVisibleActions = menuItem.actionMenu._getMenuItems().length > 0;
+        menuItem.moreBtn.visible = hasVisibleActions;
+    }
+
     _addEntry (entry, autoSelect, autoSetClip) {
         let menuItem = new PopupMenu.PopupMenuItem('');
 
@@ -698,124 +750,34 @@ const ClipboardIndicator = GObject.registerClass({
         });
         menuItem.actor.add_child(menuItem.actionsSpacer);
 
-        // Image preview button
-        if (entry.isImage()) {
-            menuItem.imagePreviewBtn = new St.Button({
-                style_class: 'ci-action-btn',
-                can_focus: true,
-                accessible_name: _('Preview Image'),
-                child: new St.Icon({
-                    icon_name: 'image-x-generic-symbolic',
-                    style_class: 'system-status-icon'
-                }),
-                visible: SHOW_PREVIEW_BUTTON,
-                x_expand: false,
-                y_expand: true,
-            });
-            menuItem.imagePreviewBtn.connect('clicked', () => this.#showImagePreview(entry));
-            menuItem.actor.add_child(menuItem.imagePreviewBtn);
-        }
-
-        // Edit button (text entries only)
-        if (entry.isText()) {
-            menuItem.editBtn = new St.Button({
-                style_class: 'ci-action-btn',
-                can_focus: true,
-                accessible_name: _('Edit'),
-                child: new St.Icon({
-                    icon_name: 'document-edit-symbolic',
-                    style_class: 'system-status-icon',
-                }),
-                visible: SHOW_EDIT_BUTTON,
-                x_expand: false,
-                y_expand: true,
-            });
-            menuItem.editBtn.connect('clicked', () => this.#showEditDialog(menuItem));
-            menuItem.actor.add_child(menuItem.editBtn);
-        }
-
-        // Favorite button
-        let iconfav = new St.Icon({
-            icon_name: 'view-pin-symbolic',
-            style_class: 'system-status-icon'
-        });
-
-        let icofavBtn = new St.Button({
-            style_class: 'ci-pin-btn ci-action-btn',
+        menuItem.moreBtn = new St.Button({
+            style_class: 'ci-action-btn ci-more-btn',
             can_focus: true,
-            child: iconfav,
-            visible: SHOW_PIN_BUTTON,
-            x_expand: false,
-            y_expand: true
-        });
-
-        menuItem.actor.add_child(icofavBtn);
-        menuItem.icofavBtn = icofavBtn;
-        menuItem.favoritePressId = icofavBtn.connect('clicked',
-            () => this._favoriteToggle(menuItem)
-        );
-
-        // Paste button
-        menuItem.pasteBtn = new St.Button({
-            style_class: 'ci-action-btn',
-            can_focus: true,
-            accessible_name: _('Paste'),
+            accessible_name: _('More actions'),
             child: new St.Icon({
-                icon_name: 'edit-paste-symbolic',
-                style_class: 'system-status-icon'
+                icon_name: 'view-more-horizontal-symbolic',
+                style_class: 'system-status-icon',
+                icon_size: 14
             }),
             x_expand: false,
-            y_expand: true,
-            visible: PASTE_BUTTON
+            y_align: Clutter.ActorAlign.CENTER,
+            opacity: 0
         });
 
-        menuItem.pasteBtn.connect('clicked',
-            () => this.#pasteItem(menuItem)
-        );
-
-        menuItem.actor.add_child(menuItem.pasteBtn);
-
-        // Tag button
-        const tagIcon = new St.Icon({
-            icon_name: 'user-bookmarks-symbolic',
-            style_class: 'system-status-icon',
+        menuItem.moreBtn.connect('clicked', () => {
+            if (menuItem.actionMenu.isOpen)
+                menuItem.actionMenu.close();
+            else
+                menuItem.actionMenu.open();
         });
 
-        menuItem.tagBtn = new St.Button({
-            style_class: 'ci-action-btn',
-            can_focus: true,
-            child: tagIcon,
-            visible: SHOW_TAG_BUTTON,
-            x_expand: false,
-            y_expand: true,
-        });
-        menuItem.tagBtn.connect('clicked', () => this.#showTagDialog(menuItem));
-        menuItem.actor.add_child(menuItem.tagBtn);
-
-        // Delete button
-        let icon = new St.Icon({
-            icon_name: 'edit-delete-symbolic', //'mail-attachment-symbolic',
-            style_class: 'system-status-icon'
+        menuItem.actor.connect('notify::hover', () => {
+            menuItem.moreBtn.opacity = menuItem.actor.hover ? 255 : 0;
         });
 
-        let icoBtn = new St.Button({
-            style_class: 'ci-action-btn',
-            can_focus: true,
-            child: icon,
-            visible: SHOW_DELETE_BUTTON,
-            x_expand: false,
-            y_expand: true
-        });
+        menuItem.actor.add_child(menuItem.moreBtn);
 
-        menuItem.actor.add_child(icoBtn);
-        menuItem.icoBtn = icoBtn;
-        menuItem.deletePressId = icoBtn.connect('clicked',
-            () => menuItem.entry.isFavorite()
-                ? (CONFIRM_ON_PINNED_DELETE
-                    ? this._confirmRemovePinnedEntry(menuItem)
-                    : this._removeEntry(menuItem, 'delete'))
-                : this._removeEntry(menuItem, 'delete')
-        );
+        menuItem.actionMenu = this.#buildItemActionMenu(menuItem, entry);
 
         if (entry.isFavorite()) {
             this.favoritesSection.addMenuItem(menuItem, 0);
@@ -894,6 +856,11 @@ const ClipboardIndicator = GObject.registerClass({
 
         if(event === 'delete' && menuItem.currentlySelected) {
             this.#clearClipboard();
+        }
+
+        if (menuItem.actionMenu) {
+            menuItem.actionMenu.destroy();
+            menuItem.actionMenu = null;
         }
 
         menuItem.destroy();
@@ -1266,7 +1233,6 @@ const ClipboardIndicator = GObject.registerClass({
             let previousClip = this.clipItemsRadioGroup[clipSecond];
             this.#updateClipboard(previousClip.entry);
             previousClip.setOrnament(PopupMenu.Ornament.DOT);
-            previousClip.icoBtn.visible = false;
             previousClip.currentlySelected = true;
         } else {
             this.#clearClipboard();
@@ -1429,15 +1395,10 @@ const ClipboardIndicator = GObject.registerClass({
             // Remove old entries in case the registry size changed
             this._removeOldestEntries();
 
-            // Re-set menu-items lables in case preview size changed
+            // Re-set menu-items labels in case preview size changed
             this._getAllIMenuItems().forEach(mItem => {
                 this._setEntryLabel(mItem);
-                mItem.pasteBtn.visible = PASTE_BUTTON;
-                mItem.icoBtn.visible = SHOW_DELETE_BUTTON;
-                mItem.tagBtn.visible = SHOW_TAG_BUTTON;
-                mItem.icofavBtn.visible = SHOW_PIN_BUTTON;
-                if (mItem.editBtn) mItem.editBtn.visible = SHOW_EDIT_BUTTON;
-                if (mItem.imagePreviewBtn) mItem.imagePreviewBtn.visible = SHOW_PREVIEW_BUTTON;
+                this.#refreshItemActionMenu(mItem);
             });
 
             //update topbar

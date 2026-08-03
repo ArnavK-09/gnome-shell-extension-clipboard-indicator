@@ -59,16 +59,18 @@
 }
 
 .clipboard-menu-img-preview {
-    border:solid 1px white;
+    border: none;
+    border-radius: 6px;
     overflow:hidden;
-    width:1.5em;
-    height:1.5em;
+    width:48px;
+    height:48px;
     margin:0;
     padding:0;
 }
 
 .clipboard-indicator-img-preview {
-    border:solid 1px white;
+    border: none;
+    border-radius: 4px;
     width:1em;
     height:1em;
     margin-right:.25em;
@@ -96,4 +98,67 @@
     border-radius: 4px;
     padding: 8px;
     min-width: 384px;
+}
+
+.clipboard-indicator-popup {
+    border-radius: 12px;
+    padding: 8px 0;
+}
+
+.clipboard-indicator-popup .popup-menu-content {
+    border-radius: 12px;
+    background-color: rgba(28, 28, 28, 0.92);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.clipboard-indicator-popup .popup-menu-item {
+    border-radius: 8px;
+    margin: 2px 8px;
+    padding: 8px 12px;
+    transition: background-color 150ms ease-in-out;
+}
+
+.clipboard-indicator-popup .popup-menu-item:hover,
+.clipboard-indicator-popup .popup-menu-item:focus,
+.clipboard-indicator-popup .popup-menu-item.selected {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.clipboard-indicator-popup StScrollBar {
+    width: 0;
+}
+
+.clipboard-indicator-popup StScrollBar StBin {
+    background-color: transparent;
+    border: none;
+}
+
+.popup-menu-item .ci-more-btn {
+    icon-size: 14px;
+    margin-left: 8px;
+    transition: opacity 150ms ease-in-out;
+}
+
+.popup-menu-item:hover .ci-more-btn,
+.popup-menu-item.selected .ci-more-btn,
+.popup-menu-item:focus .ci-more-btn {
+    opacity: 255;
+}
+
+.clipboard-indicator-item-menu .popup-menu-content {
+    border-radius: 8px;
+    padding: 4px 0;
+    background-color: rgba(40, 40, 40, 0.96);
+}
+
+.clipboard-indicator-item-menu .popup-menu-item {
+    border-radius: 6px;
+    margin: 1px 4px;
+    padding: 6px 10px;
+    transition: background-color 120ms ease-in-out;
+}
+
+.clipboard-indicator-item-menu .popup-menu-item:hover,
+.clipboard-indicator-item-menu .popup-menu-item:focus {
+    background-color: rgba(255, 255, 255, 0.1);
 }

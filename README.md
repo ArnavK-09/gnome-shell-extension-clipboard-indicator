@@ -56,6 +56,13 @@ Pasting from the menu works by sending Shift+Insert to programs or Ctrl+Shift+In
   keybind = ctrl+shift+insert=paste_from_clipboard
   ```
 
+### Blur my Shell support
+
+The clipboard popup exposes the CSS class `clipboard-indicator-popup`.
+If you use the [Blur my Shell](https://github.com/aunetx/blur-my-shell) extension,
+you can add that class to its application list to get a blurred backdrop behind
+this extension's popup.
+
 ### Known issues
 
 - Copying large images causes a short freeze
