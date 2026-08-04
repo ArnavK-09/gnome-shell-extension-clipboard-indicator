@@ -2,6 +2,10 @@
 
 This is a fork of [clipboard-indicator](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator) by Tudmotu, modified by **ArnavK-09** for personal use.
 
+<p align="center">
+    <img alt="screenshot" src="https://github.com/user-attachments/assets/537547f6-bfd7-4a7a-b2ef-b4905ef74ca3" />
+</p>
+
 ## What changed
 
 - **Removed pin/favorite feature entirely** — no more pinning, no favorites section, no pinned-on-bottom toggle
