@@ -1,117 +1,27 @@
-# 📋 Clipboard Indicator
+# Clipboard Indicator (Fork)
 
-[<img src="https://raw.githubusercontent.com/andyholmes/gnome-shell-extensions-badge/eb9af9a1c6f04eb060cb01de6aeb5c84232cd8c0/get-it-on-ego.svg?sanitize=true" width="180" alt="Get it on GNOME Extensions">](https://extensions.gnome.org/extension/779/clipboard-indicator/)
+This is a fork of [clipboard-indicator](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator) by Tudmotu, modified by **ArnavK-09** for personal use.
 
+## What changed
 
+- **Removed pin/favorite feature entirely** — no more pinning, no favorites section, no pinned-on-bottom toggle
+- **Removed dropdown action menu** — the "more actions" (⋯) dropdown that was unreliable and auto-closed the popup has been replaced with inline icons
+- **Inline delete button** — a small trash icon appears on the right side of each clipboard item on hover, with a circular hover highlight
+- **Removed preview button from item menu** — image preview still available via keyboard shortcut (`h`)
+- **Removed tag button from item menu** — tagging still available via keyboard shortcut (`t`)
+- **Removed edit button from item menu** — editing still available via keyboard shortcut (`e`)
+- **Removed paste button from item menu** — pasting still available via keyboard shortcut (`v`) or by selecting the item
+- **Cleaned up dead code** from the old dropdown/pin system
 
-The most popular, reliable and feature-rich clipboard manager for GNOME with
-over **2M** downloads.
+Everything else (search, private mode, keyboard shortcuts, auto-clear, notifications, etc.) remains unchanged from the upstream extension.
 
-<img src="./screenshot.png" width="400" alt="A screenshot of the clipboard manager, showing clipboard history including images">
-
-This extension is also packaged by the community for many popular Linux distros
-— search your package manager.
-
-## 🧰 Features
-
-* **Image support** — Copy and paste images in addition to text
-* **Pin items** — Keep important clipboard entries at the top of the menu
-* **Search** — Find clipboard entries with text search, including regex
-* **Edit entries** — Modify existing text entries
-* **Tag entries** — Add custom labels to organize your clipboard
-* **Keyboard shortcuts** — Open/close menu, cycle through entries and activate actions without touching the mouse
-* **Auto-clear history** — Schedule automatic clipboard cleanup at regular intervals or at boot time
-* **Private mode** — Temporarily pause clipboard history when working with sensitive data
-* **Exclude apps** — Prevent clipboard tracking when specific applications are in focus (e.g., password managers)
-* **Highly configurable** — Many more settings to control UI & behavior
-
-### In-Menu Keyboard Controls
-
-- Use arrows to navigate
-- `<Enter>` to select an item
-- `<Delete>` to delete an item
-- `v` to paste directly from menu
-- `p` to pin item
-- `t` to add a tag
-- `h` to preview image
-- `e` to edit entry
-
-### Terminal support
-
-Pasting from the menu works by sending Shift+Insert to programs or Ctrl+Shift+Insert to terminals.
-
-- To use with tmux, add this to your `.tmux.conf`:
-
-  ```bash
-  # Add Ctrl Shift Insert to paste for clipboard-indicator
-  bind -T root C-S-IC {
-    run "tmux send-key \"$(xclip -d ${DISPLAY} -o -selection clipboard)\""
-  }
-  ```
-
-- To use with Ghostty, add this to your `.config/ghostty/config`:
-
-  ```bash
-  # Add Ctrl Shift Insert to paste for clipboard-indicator
-  keybind = ctrl+shift+insert=paste_from_clipboard
-  ```
-
-### Blur my Shell support
-
-The clipboard popup exposes the CSS class `clipboard-indicator-popup`.
-If you use the [Blur my Shell](https://github.com/aunetx/blur-my-shell) extension,
-you can add that class to its application list to get a blurred backdrop behind
-this extension's popup.
-
-### Known issues
-
-- Copying large images causes a short freeze
-- Pasting via menu doesn't work for every application
-
-## 📦 Install from source
-
-Installation via git is performed by cloning the repo into your local gnome-shell extensions directory (usually `~/.local/share/gnome-shell/extensions/`):
+## Install from source
 
 ```bash
-$ git clone https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator.git <extensions-dir>/clipboard-indicator@tudmotu.com
-```
-
-After cloning the repo, the extension is practically installed yet disabled. In order to enable it, run the following command:
-
-```bash
+$ git clone <repo-url> <extensions-dir>/clipboard-indicator@tudmotu.com
 $ gnome-extensions enable clipboard-indicator@tudmotu.com
 ```
 
-## ✅ GNOME Version Support
+## Original
 
-Depending on your GNOME version, you will need to install the following
-Clipboard Indicator versions:
-
-* GNOME 46 and above:
-  * Use latest version
-* GNOME 45:
-  * v57
-* GNOME 42-44
-  * v47
-* GNOME 40-41
-  * v39
-* GNOME <40
-  * v37
-
-## ⌨️ Contributing
-
-Contributions to this project are welcome.
-
-Please follow these guidelines when contributing:
-
-- If you want to contribute code, your best bet is to look for an issue with the label "Up for grabs"
-- DO NOT open unsolicited PRs unless they are for updating translations
-- Look at the list of previous PRs before you open a PR, if your PR conflicts with another, it will be rejected
-- If you have a feature idea, open an issue and discuss it there before implementing. DO NOT open a PR as a platform for discussion
-
-### Release Cycle
-
-This project loosely follows the release cycle of GNOME. That means it will
-usually receive 2 updates a year, close to the release of a new major GNOME
-version. If there are features you'd like to implement or suggest, it is advised
-to start the discussion a month or two before a GNOME release.
+Based on the original work by Tudmotu: https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator

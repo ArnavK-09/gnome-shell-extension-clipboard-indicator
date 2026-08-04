@@ -17,8 +17,8 @@
 }
 
 .popup-menu-item .ci-action-btn StIcon {
-    icon-size:1.2em;
-    margin-left:.25em;
+    icon-size: 14px;
+    -st-icon-style: symbolic;
 }
 
 .popup-menu-item StEntry StIcon {
@@ -44,10 +44,6 @@
     max-height:450px;
 }
 
-.ci-main-menu-section StButton.ci-pin-btn {
-    color: rgba(255,255,255,0.3);
-}
-
 .clipboard-hidden {
     display:none!important;
 }
@@ -60,12 +56,12 @@
 
 .clipboard-menu-img-preview {
     border: none;
-    border-radius: 6px;
-    overflow:hidden;
-    width:48px;
-    height:48px;
-    margin:0;
-    padding:0;
+    border-radius: 8px;
+    overflow: hidden;
+    width: 64px;
+    height: 64px;
+    margin: 0 8px 0 0;
+    padding: 0;
 }
 
 .clipboard-indicator-img-preview {
@@ -124,41 +120,51 @@
     background-color: rgba(255, 255, 255, 0.08);
 }
 
+.clipboard-indicator-popup StScrollView {
+    overflow: hidden;
+}
+
 .clipboard-indicator-popup StScrollBar {
-    width: 0;
+    width: 1px;
+    background-color: transparent;
 }
 
 .clipboard-indicator-popup StScrollBar StBin {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 999px;
+}
+
+.clipboard-indicator-popup StScrollBar StButton {
     background-color: transparent;
     border: none;
+    width: 1px;
+    min-width: 1px;
 }
 
-.popup-menu-item .ci-more-btn {
+.popup-menu-item .ci-action-btn {
+    transition: opacity 120ms ease-in-out, background-color 120ms ease-in-out;
+    border-radius: 999px;
+    padding: 4px;
+    margin: 0;
+}
+
+.popup-menu-item .ci-action-btn StIcon {
     icon-size: 14px;
-    margin-left: 8px;
-    transition: opacity 150ms ease-in-out;
+    -st-icon-style: symbolic;
 }
 
-.popup-menu-item:hover .ci-more-btn,
-.popup-menu-item.selected .ci-more-btn,
-.popup-menu-item:focus .ci-more-btn {
+.popup-menu-item .ci-delete-btn {
+    margin-left: 2px;
+    opacity: 0;
+}
+
+.popup-menu-item:hover .ci-delete-btn,
+.popup-menu-item.selected .ci-delete-btn,
+.popup-menu-item:focus .ci-delete-btn {
     opacity: 255;
 }
 
-.clipboard-indicator-item-menu .popup-menu-content {
-    border-radius: 8px;
-    padding: 4px 0;
-    background-color: rgba(40, 40, 40, 0.96);
-}
-
-.clipboard-indicator-item-menu .popup-menu-item {
-    border-radius: 6px;
-    margin: 1px 4px;
-    padding: 6px 10px;
-    transition: background-color 120ms ease-in-out;
-}
-
-.clipboard-indicator-item-menu .popup-menu-item:hover,
-.clipboard-indicator-item-menu .popup-menu-item:focus {
-    background-color: rgba(255, 255, 255, 0.1);
+.popup-menu-item .ci-delete-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
 }
