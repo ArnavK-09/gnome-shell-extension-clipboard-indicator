@@ -1,51 +1,56 @@
-import St from 'gi://St';
-import GObject from 'gi://GObject';
-import Clutter from 'gi://Clutter';
-import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
+import St from "gi://St";
+import GObject from "gi://GObject";
+import Clutter from "gi://Clutter";
+import * as ModalDialog from "resource:///org/gnome/shell/ui/modalDialog.js";
 
 export class DialogManager {
-    #openDialog;
+  #openDialog;
 
-    open (title, message, sub_message, ok_label, cancel_label, callback) {
-        if (this.#openDialog) return;
-        this.#openDialog = new ConfirmDialog(title, message + "\n" + sub_message, ok_label, cancel_label, callback);
-        this.#openDialog.onFinish = () => this.#openDialog = null;
-        this.#openDialog.open();
-    }
+  open(title, message, sub_message, ok_label, cancel_label, callback) {
+    if (this.#openDialog) return;
+    this.#openDialog = new ConfirmDialog(
+      title,
+      message + "\n" + sub_message,
+      ok_label,
+      cancel_label,
+      callback,
+    );
+    this.#openDialog.onFinish = () => (this.#openDialog = null);
+    this.#openDialog.open();
+  }
 
-    destroy () {
-        if (this.#openDialog) this.#openDialog.destroy();
-        this.#openDialog = null;
-    }
+  destroy() {
+    if (this.#openDialog) this.#openDialog.destroy();
+    this.#openDialog = null;
+  }
 }
 
 const ConfirmDialog = GObject.registerClass(
   class ConfirmDialog extends ModalDialog.ModalDialog {
-
     _init(title, desc, ok_label, cancel_label, callback) {
       super._init();
 
       let main_box = new St.BoxLayout({
-        vertical: false
+        vertical: false,
       });
       this.contentLayout.add_child(main_box);
 
       let message_box = new St.BoxLayout({
-        vertical: true
+        vertical: true,
       });
       main_box.add_child(message_box);
 
       let subject_label = new St.Label({
-        style: 'font-weight: bold',
+        style: "font-weight: bold",
         x_align: Clutter.ActorAlign.CENTER,
-        text: title
+        text: title,
       });
       message_box.add_child(subject_label);
 
       let desc_label = new St.Label({
-        style: 'padding-top: 12px',
+        style: "padding-top: 12px",
         x_align: Clutter.ActorAlign.CENTER,
-        text: desc
+        text: desc,
       });
       message_box.add_child(desc_label);
 
@@ -56,7 +61,7 @@ const ConfirmDialog = GObject.registerClass(
             this.close();
             this.onFinish();
           },
-          key: Clutter.Escape
+          key: Clutter.Escape,
         },
         {
           label: ok_label,
@@ -64,9 +69,9 @@ const ConfirmDialog = GObject.registerClass(
             this.close();
             this.onFinish();
             callback();
-          }
-        }
+          },
+        },
       ]);
     }
-  }
+  },
 );

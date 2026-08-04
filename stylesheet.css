@@ -1,170 +1,172 @@
 .clipboard-indicator-hbox.private-mode {
-    color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .ci-notification-label {
-    font-weight: bold;
-    color: #ffffff;
-    background-color: rgba(10,10,10,0.7);
-    border-radius: 6px;
-    font-size:2em;
-    padding:.5em;
-    width:400px;
+  font-weight: bold;
+  color: #ffffff;
+  background-color: rgba(10, 10, 10, 0.7);
+  border-radius: 6px;
+  font-size: 2em;
+  padding: 0.5em;
+  width: 400px;
 }
 
 .ci-history-menu-section .popup-menu-item {
-    margin-right: .8em;
+  margin-right: 0.8em;
 }
 
 .popup-menu-item .ci-action-btn StIcon {
-    icon-size: 14px;
-    -st-icon-style: symbolic;
+  icon-size: 14px;
+  -st-icon-style: symbolic;
 }
 
 .popup-menu-item StEntry StIcon {
-    icon-size:1em;
-    margin:0 .25em;
+  icon-size: 1em;
+  margin: 0 0.25em;
 }
 
 .clipboard-indicator-empty-state {
-    width:350px;
-    color:#aaa;
+  width: 350px;
+  color: #aaa;
 }
 
 .clipboard-indicator-empty-state StIcon {
-    icon-size:5em;
-    margin-top:3em;
+  icon-size: 5em;
+  margin-top: 3em;
 }
 
 .clipboard-indicator-empty-state StLabel {
-    margin:1em 0 3em 0;
+  margin: 1em 0 3em 0;
 }
 
 .ci-history-menu-section {
-    max-height:450px;
+  max-height: 450px;
 }
 
 .clipboard-hidden {
-    display:none!important;
+  display: none !important;
 }
 
 .clipboard-menu-icon {
-    width:1em;
-    height:1em;
-    margin-right:.5em;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.5em;
 }
 
 .clipboard-menu-img-preview {
-    border: none;
-    border-radius: 8px;
-    overflow: hidden;
-    width: 64px;
-    height: 64px;
-    margin: 0 8px 0 0;
-    padding: 0;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 64px;
+  height: 64px;
+  margin: 0 8px 0 0;
+  padding: 0;
 }
 
 .clipboard-indicator-img-preview {
-    border: none;
-    border-radius: 4px;
-    width:1em;
-    height:1em;
-    margin-right:.25em;
+  border: none;
+  border-radius: 4px;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.25em;
 }
 
 .clipboard-indicator-hbox {
-    transition: background-color 150ms ease-in-out;
+  transition: background-color 150ms ease-in-out;
 }
 
 .clipboard-indicator-hbox .clipboard-indicator-icon {
-    transition: color 150ms ease-in-out;
+  transition: color 150ms ease-in-out;
 }
 
 .ci-tag-label {
-    font-size: 0.8em;
-    color: rgba(255, 255, 255, 0.6);
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    padding: 1px 6px;
-    margin: 0 6px;
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.6);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin: 0 6px;
 }
 
 .ci-edit-textbox {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    padding: 8px;
-    min-width: 384px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 8px;
+  min-width: 384px;
 }
 
 .clipboard-indicator-popup {
-    border-radius: 12px;
-    padding: 8px 0;
+  border-radius: 12px;
+  padding: 8px 0;
 }
 
 .clipboard-indicator-popup .popup-menu-content {
-    border-radius: 12px;
-    background-color: rgba(28, 28, 28, 0.92);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  background-color: rgba(28, 28, 28, 0.92);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .clipboard-indicator-popup .popup-menu-item {
-    border-radius: 8px;
-    margin: 2px 8px;
-    padding: 8px 12px;
-    transition: background-color 150ms ease-in-out;
+  border-radius: 8px;
+  margin: 2px 8px;
+  padding: 8px 12px;
+  transition: background-color 150ms ease-in-out;
 }
 
 .clipboard-indicator-popup .popup-menu-item:hover,
 .clipboard-indicator-popup .popup-menu-item:focus,
 .clipboard-indicator-popup .popup-menu-item.selected {
-    background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .clipboard-indicator-popup StScrollView {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .clipboard-indicator-popup StScrollBar {
-    width: 1px;
-    background-color: transparent;
+  width: 1px;
+  background-color: transparent;
 }
 
 .clipboard-indicator-popup StScrollBar StBin {
-    background-color: rgba(255, 255, 255, 0.2);
-    border: none;
-    border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 999px;
 }
 
 .clipboard-indicator-popup StScrollBar StButton {
-    background-color: transparent;
-    border: none;
-    width: 1px;
-    min-width: 1px;
+  background-color: transparent;
+  border: none;
+  width: 1px;
+  min-width: 1px;
 }
 
 .popup-menu-item .ci-action-btn {
-    transition: opacity 120ms ease-in-out, background-color 120ms ease-in-out;
-    border-radius: 999px;
-    padding: 4px;
-    margin: 0;
+  transition:
+    opacity 120ms ease-in-out,
+    background-color 120ms ease-in-out;
+  border-radius: 999px;
+  padding: 4px;
+  margin: 0;
 }
 
 .popup-menu-item .ci-action-btn StIcon {
-    icon-size: 14px;
-    -st-icon-style: symbolic;
+  icon-size: 14px;
+  -st-icon-style: symbolic;
 }
 
 .popup-menu-item .ci-delete-btn {
-    margin-left: 2px;
-    opacity: 0;
+  margin-left: 2px;
+  opacity: 0;
 }
 
 .popup-menu-item:hover .ci-delete-btn,
 .popup-menu-item.selected .ci-delete-btn,
 .popup-menu-item:focus .ci-delete-btn {
-    opacity: 255;
+  opacity: 255;
 }
 
 .popup-menu-item .ci-delete-btn:hover {
-    background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.12);
 }

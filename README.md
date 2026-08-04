@@ -15,12 +15,40 @@ This is a fork of [clipboard-indicator](https://github.com/Tudmotu/gnome-shell-e
 
 Everything else (search, private mode, keyboard shortcuts, auto-clear, notifications, etc.) remains unchanged from the upstream extension.
 
-## Install from source
+## Installation
+
+### 1. Clone the repository
 
 ```bash
-$ git clone <repo-url> <extensions-dir>/clipboard-indicator@tudmotu.com
-$ gnome-extensions enable clipboard-indicator@tudmotu.com
+git clone https://github.com/ArnavK-09/gnome-shell-extension-clipboard-indicator.git
+cd gnome-shell-extension-clipboard-indicator
 ```
+
+### 2. Build & Install
+
+#### Option A: Direct Install (Recommended)
+
+Compile the schemas and locales, then install directly into `~/.local/share/gnome-shell/extensions/clipboard-indicator@tudmotu.com/`:
+
+```bash
+make install
+```
+
+#### Option B: Build as a ZIP Bundle
+
+Compile and package the extension into `bundle.zip`:
+
+```bash
+make bundle
+```
+
+You can install the generated zip bundle with `gnome-extensions`:
+
+```bash
+gnome-extensions install --force bundle.zip
+```
+
+---
 
 ## Original
 
