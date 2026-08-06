@@ -28,12 +28,13 @@ const INDICATOR_ICON = "edit-paste-symbolic";
 // Square box (logical px) that image thumbnails are aspect-fit into.
 // Kept in sync with .clipboard-menu-img-preview / .clipboard-indicator-img-preview
 // in stylesheet.css.
-const MENU_IMG_PREVIEW_SIZE = 96;
+const MENU_IMG_PREVIEW_WIDTH = 96;
+const MENU_IMG_PREVIEW_HEIGHT = 64;
 const TOPBAR_IMG_PREVIEW_SIZE = 16;
 
 let DELAYED_SELECTION_TIMEOUT = 750;
 let MAX_REGISTRY_LENGTH = 15;
-let MAX_ENTRY_LENGTH = 50;
+let MAX_ENTRY_LENGTH = 100;
 let MOVE_ITEM_FIRST = false;
 let ENABLE_KEYBINDING = true;
 let PRIVATEMODE = false;
@@ -62,7 +63,6 @@ let SHOW_PRIVATE_MODE = true;
 let SHOW_SETTINGS_BUTTON = true;
 let SHOW_CLEAR_HISTORY_BUTTON = true;
 let SHOW_DELETE_BUTTON = true;
-
 
 export default class ClipboardIndicatorExtension extends Extension {
   enable() {
@@ -312,6 +312,7 @@ const ClipboardIndicator = GObject.registerClass(
       this.menu.addMenuItem(this.scrollViewMenuSection);
 
       this.menu.box.add_style_class_name("clipboard-indicator-popup");
+      this.menu.box.set_width(360);
 
       // Private mode switch
       this.privateModeMenuItem = new PopupMenu.PopupSwitchMenuItem(
@@ -579,13 +580,16 @@ const ClipboardIndicator = GObject.registerClass(
         menuItem.label.set_text(
           this._truncate(entry.getStringValue(), MAX_ENTRY_LENGTH),
         );
+        menuItem.label.clutter_text.line_wrap = false;
+        menuItem.label.clutter_text.ellipsize = 3;
       } else if (entry.isImage()) {
         this._renderImagePreview(menuItem);
       }
     }
 
     _renderImagePreview(menuItem) {
-      this.registry.getEntryAsTexture(menuItem.entry)
+      this.registry
+        .getEntryAsTexture(menuItem.entry)
         .then((texture) => {
           if (this._destroyed) return;
           if (!texture || texture.is_destroyed?.()) return;
@@ -605,11 +609,11 @@ const ClipboardIndicator = GObject.registerClass(
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
           });
-          bin.set_size(MENU_IMG_PREVIEW_SIZE, MENU_IMG_PREVIEW_SIZE);
+          bin.set_size(MENU_IMG_PREVIEW_WIDTH, MENU_IMG_PREVIEW_HEIGHT);
           bin.set_child(texture);
 
           texture.content_gravity = Clutter.ContentGravity.SCALE_ASPECT_FIT;
-          texture.set_size(MENU_IMG_PREVIEW_SIZE, MENU_IMG_PREVIEW_SIZE);
+          texture.set_size(MENU_IMG_PREVIEW_WIDTH, MENU_IMG_PREVIEW_HEIGHT);
 
           menuItem.previewImage = bin;
           menuItem.insert_child_below(bin, menuItem.label);
@@ -1167,7 +1171,9 @@ const ClipboardIndicator = GObject.registerClass(
       } else {
         this.#clearClipboard();
       }
-      this._removeEntry(this.clipItemsRadioGroup[this.clipItemsRadioGroup.length - 1]);
+      this._removeEntry(
+        this.clipItemsRadioGroup[this.clipItemsRadioGroup.length - 1],
+      );
     }
 
     _showNotification(message, transformFn) {
@@ -1481,7 +1487,8 @@ const ClipboardIndicator = GObject.registerClass(
 
           if (NOTIFY_ON_CYCLE) {
             this._showNotification(
-              (i + 1) +
+              i +
+                1 +
                 " / " +
                 menuItems.length +
                 ": " +
@@ -1850,11 +1857,14 @@ const ClipboardIndicator = GObject.registerClass(
 
               // HACK: workaround for GNOME 2nd+ copy mangling mimetypes https://gitlab.gnome.org/GNOME/gnome-shell/-/issues/8233
               // In theory GNOME or XWayland should auto-convert this back to UTF8_STRING for legacy apps when it's needed https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/5300
-              const effectiveType = type === "UTF8_STRING"
-                ? "text/plain;charset=utf-8"
-                : type;
+              const effectiveType =
+                type === "UTF8_STRING" ? "text/plain;charset=utf-8" : type;
 
-              const entry = new ClipboardEntry(effectiveType, bytes.get_data(), false);
+              const entry = new ClipboardEntry(
+                effectiveType,
+                bytes.get_data(),
+                false,
+              );
               if (CACHE_IMAGES && entry.isImage()) {
                 this.registry.writeEntryFile(entry).then(() => resolve(entry));
               } else {
