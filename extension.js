@@ -202,14 +202,19 @@ const ClipboardIndicator = GObject.registerClass(
         } else if (entry.isImage()) {
           this._buttonText.set_text("");
           this._buttonImgPreview.destroy_all_children();
-          this.registry.getEntryAsImage(entry).then((img) => {
-            img.add_style_class_name("clipboard-indicator-img-preview");
-            img.y_align = Clutter.ActorAlign.CENTER;
 
-            // icon only renders properly in setTimeout for some arcane reason
-            this._imagePreviewTimeout = setTimeout(() => {
-              this._buttonImgPreview.set_child(img);
-            }, 0);
+          this.registry.getEntryAsTexture(entry).then((texture) => {
+            if (!texture || texture.is_destroyed()) return;
+
+            const imgBin = new St.Bin({
+              style_class: "clipboard-indicator-img-preview",
+              child: texture,
+              x_align: Clutter.ActorAlign.FILL,
+              y_align: Clutter.ActorAlign.FILL,
+            });
+
+            this.#prepareImageTexture(texture, imgBin);
+            this._buttonImgPreview.set_child(imgBin);
           });
         }
       }
@@ -575,17 +580,23 @@ const ClipboardIndicator = GObject.registerClass(
         this.registry
           .getEntryAsTexture(entry)
           .then((texture) => {
-            if (!texture) return;
+            if (!texture || texture.is_destroyed()) return;
+
             if (menuItem.previewImage) {
               menuItem.remove_child(menuItem.previewImage);
+              menuItem.previewImage.destroy();
               menuItem.previewImage = null;
             }
+
             const previewBin = new St.Bin({
               style_class: "clipboard-menu-img-preview",
               child: texture,
-              x_align: Clutter.ActorAlign.CENTER,
-              y_align: Clutter.ActorAlign.CENTER,
+              x_align: Clutter.ActorAlign.FILL,
+              y_align: Clutter.ActorAlign.FILL,
             });
+
+            this.#prepareImageTexture(texture, previewBin);
+
             menuItem.previewImage = previewBin;
             menuItem.insert_child_below(previewBin, menuItem.label);
           })
@@ -1557,6 +1568,53 @@ const ClipboardIndicator = GObject.registerClass(
       }, 50);
     }
 
+    #prepareImageTexture(texture, container) {
+      if (!texture) return;
+
+      texture.content_gravity = Clutter.ContentGravity.SCALE_ASPECT_FIT;
+      texture.x_expand = true;
+      texture.y_expand = true;
+
+      let contentHandlerId = null;
+      let destroyHandlerId = null;
+
+      const cleanup = () => {
+        if (contentHandlerId) {
+          try {
+            texture.disconnect(contentHandlerId);
+          } catch (e) {}
+          contentHandlerId = null;
+        }
+        if (destroyHandlerId) {
+          try {
+            texture.disconnect(destroyHandlerId);
+          } catch (e) {}
+          destroyHandlerId = null;
+        }
+      };
+
+      const onContentReady = () => {
+        const [, natW] = texture.get_preferred_width(-1);
+        const [, natH] = texture.get_preferred_height(-1);
+
+        if (natW <= 0 || natH <= 0) return;
+
+        cleanup();
+        if (container && !container.is_destroyed()) {
+          container.queue_relayout();
+        }
+        if (!texture.is_destroyed()) {
+          texture.queue_redraw();
+        }
+      };
+
+      contentHandlerId = texture.connect("notify::content", onContentReady);
+      destroyHandlerId = texture.connect("destroy", cleanup);
+
+      // Content may already be loaded before we connected.
+      onContentReady();
+    }
+
     #showImagePreview(entry, onClose = null) {
       this.#closeImagePreview();
       this.menu.close();
@@ -1625,28 +1683,44 @@ const ClipboardIndicator = GObject.registerClass(
         .getEntryAsTexture(entry)
         .then((actor) => {
           if (this.#_imagePreviewOverlay !== overlay) return;
-          if (!actor) return;
+          if (!actor || actor.is_destroyed()) return;
 
-          let contentHandlerId = actor.connect("notify::content", () => {
+          let contentHandlerId = null;
+          let destroyHandlerId = null;
+
+          const cleanup = () => {
+            if (contentHandlerId) {
+              try {
+                actor.disconnect(contentHandlerId);
+              } catch (e) {}
+              contentHandlerId = null;
+            }
+            if (destroyHandlerId) {
+              try {
+                actor.disconnect(destroyHandlerId);
+              } catch (e) {}
+              destroyHandlerId = null;
+            }
+          };
+
+          const onContentReady = () => {
             const [, natW] = actor.get_preferred_width(-1);
             const [, natH] = actor.get_preferred_height(-1);
 
-            if (natW > 0 && natH > 0) {
-              actor.disconnect(contentHandlerId);
-              contentHandlerId = null;
-              const scale = Math.min(1, maxW / natW, maxH / natH);
-              bin.set_size(Math.round(natW * scale), Math.round(natH * scale));
-            }
-          });
+            if (natW <= 0 || natH <= 0) return;
 
-          actor.connect("destroy", () => {
-            if (contentHandlerId) {
-              actor.disconnect(contentHandlerId);
-              contentHandlerId = null;
-            }
-          });
+            cleanup();
+            const scale = Math.min(1, maxW / natW, maxH / natH);
+            bin.set_size(Math.round(natW * scale), Math.round(natH * scale));
+          };
+
+          contentHandlerId = actor.connect("notify::content", onContentReady);
+          destroyHandlerId = actor.connect("destroy", cleanup);
 
           bin.set_child(actor);
+
+          // Content may already be loaded before we connected.
+          onContentReady();
         })
         .catch((e) => {
           console.error("Clipboard Indicator: failed to load image preview");
@@ -1808,7 +1882,6 @@ const ClipboardIndicator = GObject.registerClass(
     }
 
     #clearTimeouts() {
-      if (this._imagePreviewTimeout) clearTimeout(this._imagePreviewTimeout);
       if (this._setFocusOnOpenTimeout)
         clearTimeout(this._setFocusOnOpenTimeout);
       if (this._pastingKeypressTimeout)
