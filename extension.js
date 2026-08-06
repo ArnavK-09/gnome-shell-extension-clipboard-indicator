@@ -25,6 +25,12 @@ const CLIPBOARD_TYPE = St.ClipboardType.CLIPBOARD;
 
 const INDICATOR_ICON = "edit-paste-symbolic";
 
+// Square box (logical px) that image thumbnails are aspect-fit into.
+// Kept in sync with .clipboard-menu-img-preview / .clipboard-indicator-img-preview
+// in stylesheet.css.
+const MENU_IMG_PREVIEW_SIZE = 64;
+const TOPBAR_IMG_PREVIEW_SIZE = 16;
+
 let DELAYED_SELECTION_TIMEOUT = 750;
 let MAX_REGISTRY_LENGTH = 15;
 let MAX_ENTRY_LENGTH = 50;
@@ -209,11 +215,15 @@ const ClipboardIndicator = GObject.registerClass(
             const imgBin = new St.Bin({
               style_class: "clipboard-indicator-img-preview",
               child: texture,
-              x_align: Clutter.ActorAlign.FILL,
-              y_align: Clutter.ActorAlign.FILL,
+              x_align: Clutter.ActorAlign.CENTER,
+              y_align: Clutter.ActorAlign.CENTER,
             });
 
-            this.#prepareImageTexture(texture, imgBin);
+            this.#fitTexture(
+              texture,
+              TOPBAR_IMG_PREVIEW_SIZE,
+              TOPBAR_IMG_PREVIEW_SIZE,
+            );
             this._buttonImgPreview.set_child(imgBin);
           });
         }
@@ -591,11 +601,11 @@ const ClipboardIndicator = GObject.registerClass(
             const previewBin = new St.Bin({
               style_class: "clipboard-menu-img-preview",
               child: texture,
-              x_align: Clutter.ActorAlign.FILL,
-              y_align: Clutter.ActorAlign.FILL,
+              x_align: Clutter.ActorAlign.CENTER,
+              y_align: Clutter.ActorAlign.CENTER,
             });
 
-            this.#prepareImageTexture(texture, previewBin);
+            this.#fitTexture(texture, MENU_IMG_PREVIEW_SIZE, MENU_IMG_PREVIEW_SIZE);
 
             menuItem.previewImage = previewBin;
             menuItem.insert_child_below(previewBin, menuItem.label);
@@ -1568,51 +1578,64 @@ const ClipboardIndicator = GObject.registerClass(
       }, 50);
     }
 
-    #prepareImageTexture(texture, container) {
-      if (!texture) return;
+    // Scale a texture produced by St.TextureCache.load_file_async() so its
+    // content is drawn at an aspect-fit size within maxW x maxH.
+    //
+    // load_file_async() returns a Clutter.Actor whose preferred size is the
+    // image's *native* pixel dimensions, and whose content is only painted
+    // scaled once the actor is given an allocation smaller than that. Without
+    // an explicit size the content is painted at native size and ends up
+    // clipped/overflowing its container instead of appearing as a thumbnail.
+    // Setting an explicit size together with content-gravity = SCALE_ASPECT_FIT
+    // deterministically produces a properly scaled thumbnail regardless of the
+    // parent container's layout/alignment semantics.
+    #fitTexture(texture, maxW, maxH, capScaleToOne = false) {
+      if (!texture || texture.is_destroyed()) return;
 
       texture.content_gravity = Clutter.ContentGravity.SCALE_ASPECT_FIT;
-      texture.x_expand = true;
-      texture.y_expand = true;
 
-      let contentHandlerId = null;
-      let destroyHandlerId = null;
+      let contentId = 0;
+      let destroyId = 0;
 
       const cleanup = () => {
-        if (contentHandlerId) {
+        if (contentId) {
           try {
-            texture.disconnect(contentHandlerId);
+            texture.disconnect(contentId);
           } catch (e) {}
-          contentHandlerId = null;
+          contentId = 0;
         }
-        if (destroyHandlerId) {
+        if (destroyId) {
           try {
-            texture.disconnect(destroyHandlerId);
+            texture.disconnect(destroyId);
           } catch (e) {}
-          destroyHandlerId = null;
+          destroyId = 0;
         }
       };
 
-      const onContentReady = () => {
+      const apply = () => {
+        if (texture.is_destroyed()) return true;
         const [, natW] = texture.get_preferred_width(-1);
         const [, natH] = texture.get_preferred_height(-1);
+        if (natW <= 0 || natH <= 0) return false;
 
-        if (natW <= 0 || natH <= 0) return;
+        let scale = Math.min(maxW / natW, maxH / natH);
+        if (capScaleToOne) scale = Math.min(scale, 1);
 
-        cleanup();
-        if (container && !container.is_destroyed()) {
-          container.queue_relayout();
-        }
-        if (!texture.is_destroyed()) {
-          texture.queue_redraw();
-        }
+        texture.set_size(
+          Math.max(1, Math.round(natW * scale)),
+          Math.max(1, Math.round(natH * scale)),
+        );
+        return true;
       };
 
-      contentHandlerId = texture.connect("notify::content", onContentReady);
-      destroyHandlerId = texture.connect("destroy", cleanup);
-
-      // Content may already be loaded before we connected.
-      onContentReady();
+      // The pixbuf loads asynchronously; preferred size is only known once
+      // content is set. If it is already loaded (cache hit) apply right away.
+      if (!apply()) {
+        contentId = texture.connect("notify::content", () => {
+          if (apply()) cleanup();
+        });
+      }
+      destroyId = texture.connect("destroy", cleanup);
     }
 
     #showImagePreview(entry, onClose = null) {
@@ -1685,42 +1708,9 @@ const ClipboardIndicator = GObject.registerClass(
           if (this.#_imagePreviewOverlay !== overlay) return;
           if (!actor || actor.is_destroyed()) return;
 
-          let contentHandlerId = null;
-          let destroyHandlerId = null;
-
-          const cleanup = () => {
-            if (contentHandlerId) {
-              try {
-                actor.disconnect(contentHandlerId);
-              } catch (e) {}
-              contentHandlerId = null;
-            }
-            if (destroyHandlerId) {
-              try {
-                actor.disconnect(destroyHandlerId);
-              } catch (e) {}
-              destroyHandlerId = null;
-            }
-          };
-
-          const onContentReady = () => {
-            const [, natW] = actor.get_preferred_width(-1);
-            const [, natH] = actor.get_preferred_height(-1);
-
-            if (natW <= 0 || natH <= 0) return;
-
-            cleanup();
-            const scale = Math.min(1, maxW / natW, maxH / natH);
-            bin.set_size(Math.round(natW * scale), Math.round(natH * scale));
-          };
-
-          contentHandlerId = actor.connect("notify::content", onContentReady);
-          destroyHandlerId = actor.connect("destroy", cleanup);
-
           bin.set_child(actor);
-
-          // Content may already be loaded before we connected.
-          onContentReady();
+          // Aspect-fit within the preview bounds; don't upscale beyond native.
+          this.#fitTexture(actor, maxW, maxH, true);
         })
         .catch((e) => {
           console.error("Clipboard Indicator: failed to load image preview");
