@@ -28,13 +28,12 @@ const INDICATOR_ICON = "edit-paste-symbolic";
 // Square box (logical px) that image thumbnails are aspect-fit into.
 // Kept in sync with .clipboard-menu-img-preview / .clipboard-indicator-img-preview
 // in stylesheet.css.
-const MENU_IMG_PREVIEW_SIZE = 64;
+const MENU_IMG_PREVIEW_SIZE = 96;
 const TOPBAR_IMG_PREVIEW_SIZE = 16;
 
 let DELAYED_SELECTION_TIMEOUT = 750;
 let MAX_REGISTRY_LENGTH = 15;
 let MAX_ENTRY_LENGTH = 50;
-let DELETE_ENABLED = true;
 let MOVE_ITEM_FIRST = false;
 let ENABLE_KEYBINDING = true;
 let PRIVATEMODE = false;
@@ -50,7 +49,6 @@ let DISABLE_DOWN_ARROW = false;
 let BLINK_ICON_ON_COPY = false;
 let STRIP_TEXT = false;
 let KEEP_SELECTED_ON_CLEAR = false;
-let PASTE_BUTTON = true;
 let CACHE_IMAGES = true;
 let EXCLUDED_APPS = [];
 let CLEAR_HISTORY_ON_INTERVAL = false;
@@ -64,9 +62,7 @@ let SHOW_PRIVATE_MODE = true;
 let SHOW_SETTINGS_BUTTON = true;
 let SHOW_CLEAR_HISTORY_BUTTON = true;
 let SHOW_DELETE_BUTTON = true;
-let SHOW_TAG_BUTTON = true;
-let SHOW_EDIT_BUTTON = true;
-let SHOW_PREVIEW_BUTTON = true;
+
 
 export default class ClipboardIndicatorExtension extends Extension {
   enable() {
@@ -210,21 +206,14 @@ const ClipboardIndicator = GObject.registerClass(
           this._buttonImgPreview.destroy_all_children();
 
           this.registry.getEntryAsTexture(entry).then((texture) => {
-            if (!texture || texture.is_destroyed()) return;
-
-            const imgBin = new St.Bin({
-              style_class: "clipboard-indicator-img-preview",
-              child: texture,
-              x_align: Clutter.ActorAlign.CENTER,
-              y_align: Clutter.ActorAlign.CENTER,
-            });
+            if (!texture || texture.is_destroyed?.()) return;
 
             this.#fitTexture(
               texture,
               TOPBAR_IMG_PREVIEW_SIZE,
               TOPBAR_IMG_PREVIEW_SIZE,
             );
-            this._buttonImgPreview.set_child(imgBin);
+            this._buttonImgPreview.set_child(texture);
           });
         }
       }
@@ -281,6 +270,10 @@ const ClipboardIndicator = GObject.registerClass(
       this._entryItem.add_child(this.searchEntry);
 
       this.menu.connect("open-state-changed", (self, open) => {
+        if (open && this.historyScrollView?.vscroll_adjustment) {
+          this.historyScrollView.vscroll_adjustment.value = 0;
+        }
+
         this._setFocusOnOpenTimeout = setTimeout(() => {
           if (!open) return;
 
@@ -544,11 +537,11 @@ const ClipboardIndicator = GObject.registerClass(
       if (!CASE_SENSITIVE_SEARCH) searchedText = searchedText.toLowerCase();
 
       if (searchedText === "") {
-        this._getAllIMenuItems().forEach(function (mItem) {
+        this._getAllMenuItems().forEach(function (mItem) {
           mItem.actor.visible = true;
         });
       } else {
-        this._getAllIMenuItems().forEach((mItem) => {
+        this._getAllMenuItems().forEach((mItem) => {
           let text = mItem.clipContents;
           let tag = mItem.entry.getTag() || "";
           if (!CASE_SENSITIVE_SEARCH) {
@@ -587,38 +580,47 @@ const ClipboardIndicator = GObject.registerClass(
           this._truncate(entry.getStringValue(), MAX_ENTRY_LENGTH),
         );
       } else if (entry.isImage()) {
-        this.registry
-          .getEntryAsTexture(entry)
-          .then((texture) => {
-            if (!texture || texture.is_destroyed()) return;
-
-            if (menuItem.previewImage) {
-              menuItem.remove_child(menuItem.previewImage);
-              menuItem.previewImage.destroy();
-              menuItem.previewImage = null;
-            }
-
-            const previewBin = new St.Bin({
-              style_class: "clipboard-menu-img-preview",
-              child: texture,
-              x_align: Clutter.ActorAlign.CENTER,
-              y_align: Clutter.ActorAlign.CENTER,
-            });
-
-            this.#fitTexture(texture, MENU_IMG_PREVIEW_SIZE, MENU_IMG_PREVIEW_SIZE);
-
-            menuItem.previewImage = previewBin;
-            menuItem.insert_child_below(previewBin, menuItem.label);
-          })
-          .catch((e) => {
-            console.error("Clipboard Indicator: failed to load image preview");
-            console.error(e);
-          });
+        this._renderImagePreview(menuItem);
       }
     }
 
-    _findNextMenuItem(currentMenutItem) {
-      let currentIndex = this.clipItemsRadioGroup.indexOf(currentMenutItem);
+    _renderImagePreview(menuItem) {
+      this.registry.getEntryAsTexture(menuItem.entry)
+        .then((texture) => {
+          if (this._destroyed) return;
+          if (!texture || texture.is_destroyed?.()) return;
+
+          if (menuItem.previewImage) {
+            menuItem.remove_child(menuItem.previewImage);
+            menuItem.previewImage.destroy();
+            menuItem.previewImage = null;
+          }
+
+          // Wrap the texture in a St.Bin with explicit dimensions so the
+          // popup menu item actually allocates enough height/width for the
+          // image to render. The texture itself uses content_gravity to
+          // aspect-fit within the bin.
+          const bin = new St.Bin({
+            style_class: "clipboard-menu-img-preview",
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+          });
+          bin.set_size(MENU_IMG_PREVIEW_SIZE, MENU_IMG_PREVIEW_SIZE);
+          bin.set_child(texture);
+
+          texture.content_gravity = Clutter.ContentGravity.SCALE_ASPECT_FIT;
+          texture.set_size(MENU_IMG_PREVIEW_SIZE, MENU_IMG_PREVIEW_SIZE);
+
+          menuItem.previewImage = bin;
+          menuItem.insert_child_below(bin, menuItem.label);
+        })
+        .catch((e) => {
+          console.error("Clipboard Indicator: failed to load image preview", e);
+        });
+    }
+
+    _findAdjacentMenuItem(currentMenuItem) {
+      let currentIndex = this.clipItemsRadioGroup.indexOf(currentMenuItem);
 
       // for only one item
       if (this.clipItemsRadioGroup.length === 1) {
@@ -643,7 +645,7 @@ const ClipboardIndicator = GObject.registerClass(
     }
 
     #selectNextMenuItem(menuItem) {
-      let nextMenuItem = this._findNextMenuItem(menuItem);
+      let nextMenuItem = this._findAdjacentMenuItem(menuItem);
 
       if (nextMenuItem) {
         nextMenuItem.actor.grab_key_focus();
@@ -847,9 +849,7 @@ const ClipboardIndicator = GObject.registerClass(
 
     _onMenuItemSelected(menuItem, autoSet) {
       for (let otherMenuItem of menuItem.radioGroup) {
-        let clipContents = menuItem.clipContents;
-
-        if (otherMenuItem === menuItem && clipContents) {
+        if (otherMenuItem === menuItem && menuItem.clipContents) {
           menuItem.currentlySelected = true;
           if (autoSet !== false) this.#updateClipboard(menuItem.entry);
         } else {
@@ -864,16 +864,7 @@ const ClipboardIndicator = GObject.registerClass(
     }
 
     _onMenuItemSelectedAndMenuClose(menuItem, autoSet) {
-      for (let otherMenuItem of menuItem.radioGroup) {
-        let clipContents = menuItem.clipContents;
-
-        if (menuItem === otherMenuItem && clipContents) {
-          menuItem.currentlySelected = true;
-          if (autoSet !== false) this.#updateClipboard(menuItem.entry);
-        } else {
-          otherMenuItem.currentlySelected = false;
-        }
-      }
+      this._onMenuItemSelected(menuItem, autoSet);
 
       // Ensure MOVE_ITEM_FIRST also applies when PASTE_ON_SELECT fast-path skips _refreshIndicator()
       if (PASTE_ON_SELECT && MOVE_ITEM_FIRST) {
@@ -965,17 +956,11 @@ const ClipboardIndicator = GObject.registerClass(
       this._updateCache();
     }
 
-    _findItem(text) {
-      return this.clipItemsRadioGroup.filter(
-        (item) => item.clipContents === text,
-      )[0];
-    }
-
     _getCurrentlySelectedItem() {
       return this.clipItemsRadioGroup.find((item) => item.currentlySelected);
     }
 
-    _getAllIMenuItems() {
+    _getAllMenuItems() {
       return this.historySection._getMenuItems();
     }
 
@@ -1182,15 +1167,19 @@ const ClipboardIndicator = GObject.registerClass(
       } else {
         this.#clearClipboard();
       }
-      let clipFirst = this.clipItemsRadioGroup.length - 1;
-      this._removeEntry(this.clipItemsRadioGroup[clipFirst]);
+      this._removeEntry(this.clipItemsRadioGroup[this.clipItemsRadioGroup.length - 1]);
     }
 
     _showNotification(message, transformFn) {
-      const dndOn = () =>
-        !Main.panel.statusArea.dateMenu._indicator._settings.get_boolean(
-          "show-banners",
-        );
+      const dndOn = () => {
+        try {
+          return !Main.panel.statusArea.dateMenu._indicator._settings.get_boolean(
+            "show-banners",
+          );
+        } catch (e) {
+          return false;
+        }
+      };
       if (PRIVATEMODE || dndOn()) {
         return;
       }
@@ -1291,7 +1280,6 @@ const ClipboardIndicator = GObject.registerClass(
       const { settings } = this.extension;
       MAX_REGISTRY_LENGTH = settings.get_int(PrefsFields.HISTORY_SIZE);
       MAX_ENTRY_LENGTH = settings.get_int(PrefsFields.PREVIEW_SIZE);
-      DELETE_ENABLED = settings.get_boolean(PrefsFields.DELETE);
       MOVE_ITEM_FIRST = settings.get_boolean(PrefsFields.MOVE_ITEM_FIRST);
       NOTIFY_ON_COPY = settings.get_boolean(PrefsFields.NOTIFY_ON_COPY);
       NOTIFY_ON_CYCLE = settings.get_boolean(PrefsFields.NOTIFY_ON_CYCLE);
@@ -1310,7 +1298,6 @@ const ClipboardIndicator = GObject.registerClass(
       KEEP_SELECTED_ON_CLEAR = settings.get_boolean(
         PrefsFields.KEEP_SELECTED_ON_CLEAR,
       );
-      PASTE_BUTTON = settings.get_boolean(PrefsFields.PASTE_BUTTON);
       CACHE_IMAGES = settings.get_boolean(PrefsFields.CACHE_IMAGES);
       EXCLUDED_APPS = settings.get_strv(PrefsFields.EXCLUDED_APPS);
       CLEAR_HISTORY_ON_INTERVAL = settings.get_boolean(
@@ -1334,14 +1321,9 @@ const ClipboardIndicator = GObject.registerClass(
         PrefsFields.SHOW_CLEAR_HISTORY_BUTTON,
       );
       SHOW_DELETE_BUTTON = settings.get_boolean(PrefsFields.SHOW_DELETE_BUTTON);
-      SHOW_TAG_BUTTON = settings.get_boolean(PrefsFields.SHOW_TAG_BUTTON);
-      SHOW_EDIT_BUTTON = settings.get_boolean(PrefsFields.SHOW_EDIT_BUTTON);
-      SHOW_PREVIEW_BUTTON = settings.get_boolean(
-        PrefsFields.SHOW_PREVIEW_BUTTON,
-      );
     }
 
-    async _onSettingsChange() {
+    async _onSettingsChange(settings, key) {
       try {
         // Load the settings into variables
         this._fetchSettings();
@@ -1356,7 +1338,7 @@ const ClipboardIndicator = GObject.registerClass(
         this._removeOldestEntries();
 
         // Re-set menu-items labels in case preview size changed
-        this._getAllIMenuItems().forEach((mItem) => {
+        this._getAllMenuItems().forEach((mItem) => {
           this._setEntryLabel(mItem);
           if (mItem.deleteBtn) mItem.deleteBtn.visible = SHOW_DELETE_BUTTON;
         });
@@ -1365,9 +1347,19 @@ const ClipboardIndicator = GObject.registerClass(
         this._updateTopbarLayout();
         this.#updateIndicatorContent(await this.#getClipboardContent());
 
-        // Bind or unbind shortcuts
-        if (ENABLE_KEYBINDING) this._bindShortcuts();
-        else this._unbindShortcuts();
+        // Only rebind shortcuts when a shortcut-related key changes
+        const shortcutKeys = [
+          PrefsFields.ENABLE_KEYBINDING,
+          PrefsFields.BINDING_TOGGLE_MENU,
+          PrefsFields.BINDING_CLEAR_HISTORY,
+          PrefsFields.BINDING_PREV_ENTRY,
+          PrefsFields.BINDING_NEXT_ENTRY,
+          PrefsFields.BINDING_PRIVATE_MODE,
+        ];
+        if (!key || shortcutKeys.includes(key)) {
+          if (ENABLE_KEYBINDING) this._bindShortcuts();
+          else this._unbindShortcuts();
+        }
 
         // Respect UI toggles
         this.#showElements();
@@ -1413,20 +1405,17 @@ const ClipboardIndicator = GObject.registerClass(
         this._buttonText.visible = false;
         this._buttonImgPreview.visible = false;
         this.show();
-      }
-      if (TOPBAR_DISPLAY_MODE === 1) {
+      } else if (TOPBAR_DISPLAY_MODE === 1) {
         this.icon.visible = false;
         this._buttonText.visible = true;
         this._buttonImgPreview.visible = true;
         this.show();
-      }
-      if (TOPBAR_DISPLAY_MODE === 2) {
+      } else if (TOPBAR_DISPLAY_MODE === 2) {
         this.icon.visible = true;
         this._buttonText.visible = true;
         this._buttonImgPreview.visible = true;
         this.show();
-      }
-      if (TOPBAR_DISPLAY_MODE === 3) {
+      } else if (TOPBAR_DISPLAY_MODE === 3) {
         this.hide();
       }
       if (!DISABLE_DOWN_ARROW) {
@@ -1466,7 +1455,7 @@ const ClipboardIndicator = GObject.registerClass(
 
     _clearDelayedSelectionTimeout() {
       if (this._delayedSelectionTimeoutId) {
-        clearInterval(this._delayedSelectionTimeoutId);
+        clearTimeout(this._delayedSelectionTimeoutId);
       }
     }
 
@@ -1479,20 +1468,20 @@ const ClipboardIndicator = GObject.registerClass(
       }, DELAYED_SELECTION_TIMEOUT);
     }
 
-    _previousEntry() {
+    #cycleEntry(direction) {
       if (PRIVATEMODE) return;
 
       this._clearDelayedSelectionTimeout();
 
-      this._getAllIMenuItems().some((mItem, i, menuItems) => {
+      this._getAllMenuItems().some((mItem, i, menuItems) => {
         if (mItem.currentlySelected) {
-          i--; //get the previous index
-          if (i < 0) i = menuItems.length - 1; //cycle if out of bound
-          let index = i + 1; //index to be displayed
+          i += direction;
+          if (i < 0) i = menuItems.length - 1;
+          if (i >= menuItems.length) i = 0;
 
           if (NOTIFY_ON_CYCLE) {
             this._showNotification(
-              index +
+              (i + 1) +
                 " / " +
                 menuItems.length +
                 ": " +
@@ -1510,35 +1499,12 @@ const ClipboardIndicator = GObject.registerClass(
       });
     }
 
+    _previousEntry() {
+      this.#cycleEntry(-1);
+    }
+
     _nextEntry() {
-      if (PRIVATEMODE) return;
-
-      this._clearDelayedSelectionTimeout();
-
-      this._getAllIMenuItems().some((mItem, i, menuItems) => {
-        if (mItem.currentlySelected) {
-          i++; //get the next index
-          if (i === menuItems.length) i = 0; //cycle if out of bound
-          let index = i + 1; //index to be displayed
-
-          if (NOTIFY_ON_CYCLE) {
-            this._showNotification(
-              index +
-                " / " +
-                menuItems.length +
-                ": " +
-                menuItems[i].entry.getStringValue(),
-            );
-          }
-          if (MOVE_ITEM_FIRST) {
-            this._selectEntryWithDelay(menuItems[i]);
-          } else {
-            this._selectMenuItem(menuItems[i]);
-          }
-          return true;
-        }
-        return false;
-      });
+      this.#cycleEntry(1);
     }
 
     _toggleMenu() {
@@ -1581,61 +1547,20 @@ const ClipboardIndicator = GObject.registerClass(
     // Scale a texture produced by St.TextureCache.load_file_async() so its
     // content is drawn at an aspect-fit size within maxW x maxH.
     //
-    // load_file_async() returns a Clutter.Actor whose preferred size is the
-    // image's *native* pixel dimensions, and whose content is only painted
-    // scaled once the actor is given an allocation smaller than that. Without
-    // an explicit size the content is painted at native size and ends up
-    // clipped/overflowing its container instead of appearing as a thumbnail.
-    // Setting an explicit size together with content-gravity = SCALE_ASPECT_FIT
-    // deterministically produces a properly scaled thumbnail regardless of the
-    // parent container's layout/alignment semantics.
-    #fitTexture(texture, maxW, maxH, capScaleToOne = false) {
-      if (!texture || texture.is_destroyed()) return;
-
-      texture.content_gravity = Clutter.ContentGravity.SCALE_ASPECT_FIT;
-
-      let contentId = 0;
-      let destroyId = 0;
-
-      const cleanup = () => {
-        if (contentId) {
-          try {
-            texture.disconnect(contentId);
-          } catch (e) {}
-          contentId = 0;
-        }
-        if (destroyId) {
-          try {
-            texture.disconnect(destroyId);
-          } catch (e) {}
-          destroyId = 0;
-        }
-      };
-
-      const apply = () => {
-        if (texture.is_destroyed()) return true;
-        const [, natW] = texture.get_preferred_width(-1);
-        const [, natH] = texture.get_preferred_height(-1);
-        if (natW <= 0 || natH <= 0) return false;
-
-        let scale = Math.min(maxW / natW, maxH / natH);
-        if (capScaleToOne) scale = Math.min(scale, 1);
-
-        texture.set_size(
-          Math.max(1, Math.round(natW * scale)),
-          Math.max(1, Math.round(natH * scale)),
-        );
-        return true;
-      };
-
-      // The pixbuf loads asynchronously; preferred size is only known once
-      // content is set. If it is already loaded (cache hit) apply right away.
-      if (!apply()) {
-        contentId = texture.connect("notify::content", () => {
-          if (apply()) cleanup();
-        });
+    // We rely on the texture having content_gravity = SCALE_ASPECT_FIT plus
+    // an explicit size set by the caller. We do NOT read get_preferred_width
+    // here because for an async-loaded texture those values are 0 until the
+    // image content is fully decoded, and the timing of the
+    // "notify::content" signal is not reliable. Callers must set the size on
+    // the actor themselves.
+    #fitTexture(texture, maxW, maxH) {
+      if (!texture || texture.is_destroyed?.()) return;
+      try {
+        texture.content_gravity = Clutter.ContentGravity.SCALE_ASPECT_FIT;
+        texture.set_size(maxW, maxH);
+      } catch (e) {
+        console.warn("Clipboard Indicator: #fitTexture failed", e);
       }
-      destroyId = texture.connect("destroy", cleanup);
     }
 
     #showImagePreview(entry, onClose = null) {
@@ -1709,8 +1634,7 @@ const ClipboardIndicator = GObject.registerClass(
           if (!actor || actor.is_destroyed()) return;
 
           bin.set_child(actor);
-          // Aspect-fit within the preview bounds; don't upscale beyond native.
-          this.#fitTexture(actor, maxW, maxH, true);
+          this.#fitTexture(actor, maxW, maxH);
         })
         .catch((e) => {
           console.error("Clipboard Indicator: failed to load image preview");
@@ -1926,15 +1850,16 @@ const ClipboardIndicator = GObject.registerClass(
 
               // HACK: workaround for GNOME 2nd+ copy mangling mimetypes https://gitlab.gnome.org/GNOME/gnome-shell/-/issues/8233
               // In theory GNOME or XWayland should auto-convert this back to UTF8_STRING for legacy apps when it's needed https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/5300
-              if (type === "UTF8_STRING") {
-                type = "text/plain;charset=utf-8";
-              }
+              const effectiveType = type === "UTF8_STRING"
+                ? "text/plain;charset=utf-8"
+                : type;
 
-              const entry = new ClipboardEntry(type, bytes.get_data(), false);
+              const entry = new ClipboardEntry(effectiveType, bytes.get_data(), false);
               if (CACHE_IMAGES && entry.isImage()) {
-                this.registry.writeEntryFile(entry);
+                this.registry.writeEntryFile(entry).then(() => resolve(entry));
+              } else {
+                resolve(entry);
               }
-              resolve(entry);
             },
           ),
         );

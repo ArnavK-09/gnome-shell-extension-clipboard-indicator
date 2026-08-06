@@ -168,17 +168,24 @@ export class Registry {
       await this.writeEntryFile(entry);
     }
 
-    const file = Gio.file_new_for_path(this.getEntryFilename(entry));
+    const filename = this.getEntryFilename(entry);
+    const file = Gio.file_new_for_path(filename);
     const scaleFactor = St.ThemeContext.get_for_stage(
       global.stage,
     ).scale_factor;
-    return St.TextureCache.get_default().load_file_async(
-      file,
-      -1,
-      -1,
-      scaleFactor,
-      1.0,
-    );
+
+    try {
+      return await St.TextureCache.get_default().load_file_async(
+        file,
+        -1,
+        -1,
+        scaleFactor,
+        1.0,
+      );
+    } catch (e) {
+      console.error("Clipboard Indicator: load_file_async failed", e);
+      return null;
+    }
   }
 
   getEntryFilename(entry) {
@@ -248,12 +255,6 @@ export class ClipboardEntry {
   #bytes;
   #favorite;
 
-  static #decode(contents) {
-    return Uint8Array.from(
-      contents.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)),
-    );
-  }
-
   static __isText(mimetype) {
     return (
       mimetype.startsWith("text/") ||
@@ -275,20 +276,25 @@ export class ClipboardEntry {
 
       let file = Gio.file_new_for_path(filename);
 
-      const contentType = await file.query_info_async(
-        "*",
-        FileQueryInfoFlags.NONE,
-        GLib.PRIORITY_DEFAULT,
-        null,
-        (obj, res) => {
-          try {
-            const fileInfo = obj.query_info_finish(res);
-            return fileInfo.get_content_type();
-          } catch (e) {
-            console.error(e);
-          }
-        },
-      );
+      const contentType = await new Promise((resolve, reject) => {
+        file.query_info_async(
+          "*",
+          FileQueryInfoFlags.NONE,
+          GLib.PRIORITY_DEFAULT,
+          null,
+          (obj, res) => {
+            try {
+              const fileInfo = obj.query_info_finish(res);
+              resolve(fileInfo.get_content_type());
+            } catch (e) {
+              reject(e);
+            }
+          },
+        );
+      }).catch((e) => {
+        console.error("Clipboard Indicator: query_info_async failed", e);
+        return null;
+      });
 
       if (
         contentType &&
@@ -324,16 +330,6 @@ export class ClipboardEntry {
     this.#mimetype = mimetype;
     this.#bytes = bytes;
     this.#favorite = favorite;
-  }
-
-  #encode() {
-    if (this.isText()) {
-      return this.getStringValue();
-    }
-
-    return [...this.#bytes]
-      .map((x) => x.toString(16).padStart(2, "0"))
-      .join("");
   }
 
   getStringValue() {
@@ -384,6 +380,5 @@ export class ClipboardEntry {
 
   equals(otherEntry) {
     return this.getStringValue() === otherEntry.getStringValue();
-    // this.asBytes().equal(otherEntry.asBytes());
   }
 }

@@ -370,7 +370,7 @@ class Settings {
     this.item_actions.add(this.field_show_edit_button);
     this.item_actions.add(this.field_show_preview_button);
 
-    this.#buildShorcuts(this.shortcuts);
+    this.#buildShortcuts(this.shortcuts);
 
     this.schema.bind(
       PrefsFields.HISTORY_SIZE,
@@ -592,7 +592,7 @@ class Settings {
     this.field_clear_history_interval.set_sensitive(
       this.field_clear_history_on_interval.active,
     );
-    this.#fetchExludedAppsList();
+    this.#fetchExcludedAppsList();
   }
 
   #createDisplayModeOptions() {
@@ -612,7 +612,7 @@ class Settings {
     [PrefsFields.BINDING_NEXT_ENTRY]: _("Next entry"),
   };
 
-  #buildShorcuts(group) {
+  #buildShortcuts(group) {
     this.field_keybinding_activation = new Adw.SwitchRow({
       title: _("Enable shortcuts"),
     });
@@ -875,7 +875,7 @@ class Settings {
       if (text !== null && text.trim() !== "") {
         this.field_exclusion_row.remove(entry_row);
         this.field_exclusion_row.add_row(
-          this.#createExludedAppRow(text.trim()),
+          this.#createExcludedAppRow(text.trim()),
         );
         this.field_exclusion_row_add_button.set_sensitive(true);
         this.schema.set_strv("excluded-apps", [
@@ -913,7 +913,7 @@ class Settings {
     return entry_row;
   }
 
-  #createExludedAppRow(app_class_name) {
+  #createExcludedAppRow(app_class_name) {
     const excluded_row = new Adw.ActionRow({
       title: app_class_name,
     });
@@ -937,10 +937,10 @@ class Settings {
     return excluded_row;
   }
 
-  #fetchExludedAppsList() {
+  #fetchExcludedAppsList() {
     const excludedApps = this.schema.get_strv("excluded-apps");
     for (const app of excludedApps) {
-      this.field_exclusion_row.add_row(this.#createExludedAppRow(app));
+      this.field_exclusion_row.add_row(this.#createExcludedAppRow(app));
     }
     this.excluded_row_counter = excludedApps.length;
   }
