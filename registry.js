@@ -11,7 +11,7 @@ export class Registry {
   constructor({ settings, uuid }) {
     this.uuid = uuid;
     this.settings = settings;
-    this.REGISTRY_FILE = "registry.txt";
+    this.REGISTRY_FILE = "registry.json";
     this.REGISTRY_DIR = GLib.get_user_cache_dir() + "/" + this.uuid;
     this.REGISTRY_PATH = this.REGISTRY_DIR + "/" + this.REGISTRY_FILE;
     this.BACKUP_REGISTRY_PATH = this.REGISTRY_PATH + "~";
@@ -22,7 +22,6 @@ export class Registry {
 
     for (let entry of entries) {
       const item = {
-        favorite: entry.isFavorite(),
         mimetype: entry.mimetype(),
       };
 
@@ -123,18 +122,9 @@ export class Registry {
                       (entry) => entry !== null,
                     );
 
-                    let registryNoFavorite = clipboardEntries.filter(
-                      (entry) => !entry.isFavorite(),
-                    );
-
-                    while (registryNoFavorite.length > max_size) {
-                      let oldestNoFavorite = registryNoFavorite.shift();
-                      let itemIdx = clipboardEntries.indexOf(oldestNoFavorite);
-                      clipboardEntries.splice(itemIdx, 1);
-
-                      registryNoFavorite = clipboardEntries.filter(
-                        (entry) => !entry.isFavorite(),
-                      );
+                    while (clipboardEntries.length > max_size) {
+                      let oldest = clipboardEntries.shift();
+                      if (oldest.isImage()) this.deleteEntryFile(oldest);
                     }
 
                     resolve(clipboardEntries);
@@ -253,7 +243,6 @@ export class Registry {
 export class ClipboardEntry {
   #mimetype;
   #bytes;
-  #favorite;
 
   static __isText(mimetype) {
     return (
@@ -265,7 +254,6 @@ export class ClipboardEntry {
 
   static async fromJSON(jsonEntry) {
     const mimetype = jsonEntry.mimetype || "text/plain;charset=utf-8";
-    const favorite = jsonEntry.favorite;
     let bytes;
 
     if (ClipboardEntry.__isText(mimetype)) {
@@ -321,15 +309,14 @@ export class ClipboardEntry {
       }
     }
 
-    const entry = new ClipboardEntry(mimetype, bytes, favorite);
+    const entry = new ClipboardEntry(mimetype, bytes);
     if (jsonEntry.tag) entry.setTag(jsonEntry.tag);
     return entry;
   }
 
-  constructor(mimetype, bytes, favorite) {
+  constructor(mimetype, bytes) {
     this.#mimetype = mimetype;
     this.#bytes = bytes;
-    this.#favorite = favorite;
   }
 
   getStringValue() {
@@ -341,14 +328,6 @@ export class ClipboardEntry {
 
   mimetype() {
     return this.#mimetype;
-  }
-
-  isFavorite() {
-    return this.#favorite;
-  }
-
-  set favorite(val) {
-    this.#favorite = !!val;
   }
 
   isText() {

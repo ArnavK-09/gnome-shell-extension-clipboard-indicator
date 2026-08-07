@@ -126,11 +126,6 @@ class Settings {
       subtitle: _("Briefly flash the indicator icon when something is copied"),
     });
 
-    this.field_cache_disable = new Adw.SwitchRow({
-      title: _("Cache only pinned items"),
-      subtitle: _("Only save pinned (favorite) entries to disk"),
-    });
-
     this.field_copy_notification_toggle = new Adw.SwitchRow({
       title: _("Show notification on copy"),
       subtitle: _("Display a notification each time text is copied"),
@@ -153,11 +148,6 @@ class Settings {
       subtitle: _("Ask before deleting all clipboard entries"),
     });
 
-    this.field_confirm_pinned_delete_toggle = new Adw.SwitchRow({
-      title: _("Prompt before deleting pinned item"),
-      subtitle: _("Ask for confirmation before deleting a pinned item"),
-    });
-
     this.field_strip_text = new Adw.SwitchRow({
       title: _("Remove whitespace around text"),
       subtitle: _(
@@ -176,13 +166,6 @@ class Settings {
       title: _("Keep selected entry after Clear History"),
       subtitle: _(
         "The currently active clipboard entry will not be removed when clearing history",
-      ),
-    });
-
-    this.field_pinned_on_bottom = new Adw.SwitchRow({
-      title: _("Place the pinned section on the bottom"),
-      subtitle: _(
-        "Move the pinned section to the bottom of the menu. Requires re-login",
       ),
     });
 
@@ -235,11 +218,6 @@ class Settings {
     this.field_paste_button = new Adw.SwitchRow({
       title: _("Paste"),
       subtitle: _("Show the paste button on each item"),
-    });
-
-    this.field_show_pin_button = new Adw.SwitchRow({
-      title: _("Pin"),
-      subtitle: _("Show the pin/favorite button on each item"),
     });
 
     this.field_show_edit_button = new Adw.SwitchRow({
@@ -327,8 +305,6 @@ class Settings {
 
     this.ui.add(this.field_preview_size);
     this.ui.add(this.field_confirm_clear_toggle);
-    this.ui.add(this.field_confirm_pinned_delete_toggle);
-    this.ui.add(this.field_pinned_on_bottom);
     this.ui.add(this.field_show_search_bar);
     this.ui.add(this.field_show_private_mode);
     this.ui.add(this.field_show_settings_button);
@@ -349,7 +325,6 @@ class Settings {
 
     this.limits.add(this.field_size);
     this.limits.add(this.field_cache_size);
-    this.limits.add(this.field_cache_disable);
 
     this.topbar.add(this.field_display_mode);
     this.topbar.add(this.field_topbar_preview_size);
@@ -366,7 +341,6 @@ class Settings {
     this.item_actions.add(this.field_show_delete_button);
     this.item_actions.add(this.field_show_tag_button);
     this.item_actions.add(this.field_paste_button);
-    this.item_actions.add(this.field_show_pin_button);
     this.item_actions.add(this.field_show_edit_button);
     this.item_actions.add(this.field_show_preview_button);
 
@@ -391,12 +365,6 @@ class Settings {
       Gio.SettingsBindFlags.DEFAULT,
     );
     this.schema.bind(
-      PrefsFields.CACHE_ONLY_FAVORITE,
-      this.field_cache_disable,
-      "active",
-      Gio.SettingsBindFlags.DEFAULT,
-    );
-    this.schema.bind(
       PrefsFields.NOTIFY_ON_COPY,
       this.field_copy_notification_toggle,
       "active",
@@ -417,12 +385,6 @@ class Settings {
     this.schema.bind(
       PrefsFields.CONFIRM_ON_CLEAR,
       this.field_confirm_clear_toggle,
-      "active",
-      Gio.SettingsBindFlags.DEFAULT,
-    );
-    this.schema.bind(
-      PrefsFields.CONFIRM_ON_PINNED_DELETE,
-      this.field_confirm_pinned_delete_toggle,
       "active",
       Gio.SettingsBindFlags.DEFAULT,
     );
@@ -471,12 +433,6 @@ class Settings {
     this.schema.bind(
       PrefsFields.PASTE_BUTTON,
       this.field_paste_button,
-      "active",
-      Gio.SettingsBindFlags.DEFAULT,
-    );
-    this.schema.bind(
-      PrefsFields.PINNED_ON_BOTTOM,
-      this.field_pinned_on_bottom,
       "active",
       Gio.SettingsBindFlags.DEFAULT,
     );
@@ -567,12 +523,6 @@ class Settings {
     this.schema.bind(
       PrefsFields.SHOW_TAG_BUTTON,
       this.field_show_tag_button,
-      "active",
-      Gio.SettingsBindFlags.DEFAULT,
-    );
-    this.schema.bind(
-      PrefsFields.SHOW_PIN_BUTTON,
-      this.field_show_pin_button,
       "active",
       Gio.SettingsBindFlags.DEFAULT,
     );

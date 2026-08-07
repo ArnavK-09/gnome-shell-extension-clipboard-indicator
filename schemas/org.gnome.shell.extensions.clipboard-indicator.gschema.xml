@@ -10,14 +10,6 @@
         </description>
     </key>
 
-    <key name="pinned-on-bottom" type="b">
-        <default>false</default>
-        <summary>Display the pinned section on the bottom</summary>
-        <description>
-            If true, places the "pinned" section on the bottom
-        </description>
-    </key>
-
     <key name="enable-deletion" type="b">
         <default>true</default>
         <summary>Enable the deletion of clipboard items from your history</summary>
@@ -112,16 +104,6 @@
         <range min="1" max="1024"/>
     </key>
 
-    <key name="cache-only-favorites" type="b">
-        <default>false</default>
-        <summary>Disable the registry cache file for favorites and use memory only</summary>
-        <description>
-            Contents which are not favorites are not stored and retrieved from a cache (registry.txt) file.
-            This can avoid writing passwords to a plaintext file, but at the cost of persistant history.
-            Your clipboard history, except favorite items, is lost after a gnome-shell session ends or the extension is reloaded.
-        </description>
-    </key>
-
     <key name="notify-on-copy" type="b">
         <default>false</default>
         <summary>Show notification on copy to clipboard</summary>
@@ -151,14 +133,6 @@
         <summary>Show confirmation dialog on Clear History</summary>
         <description>
             If true, a confirmation dialog is shown when attempting to Clear History.
-        </description>
-    </key>
-
-    <key name="confirm-pinned-delete" type="b">
-        <default>false</default>
-        <summary>Show confirmation dialog on deleting pinned item</summary>
-        <description>
-            If true, a confirmation dialog is shown when attempting to delete a pinned item.
         </description>
     </key>
 
@@ -284,10 +258,6 @@
     <key name="show-tag-button" type="b">
         <default>true</default>
         <summary>Show the tag button on each item</summary>
-    </key>
-    <key name="show-pin-button" type="b">
-        <default>true</default>
-        <summary>Show the pin/favorite button on each item</summary>
     </key>
     <key name="show-edit-button" type="b">
         <default>true</default>

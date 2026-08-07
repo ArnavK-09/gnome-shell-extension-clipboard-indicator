@@ -8,7 +8,7 @@ This is a fork of [clipboard-indicator](https://github.com/Tudmotu/gnome-shell-e
 
 ## What changed
 
-- **Removed pin/favorite feature entirely** — no more pinning, no favorites section, no pinned-on-bottom toggle
+- **Removed the pin feature entirely** — no more pinning, no pinned section, no pinned-on-bottom toggle
 - **Removed dropdown action menu** — the "more actions" (⋯) dropdown that was unreliable and auto-closed the popup has been replaced with inline icons
 - **Inline delete button** — a small trash icon appears on the right side of each clipboard item on hover, with a circular hover highlight
 - **Removed preview button from item menu** — image preview still available via keyboard shortcut (`h`)

@@ -123,6 +123,10 @@ const ClipboardIndicator = GObject.registerClass(
       });
       Main.uiGroup.add_child(this._cursorActor);
 
+      // Keep the menu anchored to the top of the source actor so deleting items
+      // (which shrinks the menu height) does not make the popup window jump.
+      this.menu.setSourceAlignment(0.0);
+
       this.menu.connect("open-state-changed", (menu, isOpen) => {
         if (!isOpen) {
           this.menu.sourceActor = this;
@@ -823,6 +827,13 @@ const ClipboardIndicator = GObject.registerClass(
     _removeEntry(menuItem, event) {
       let itemIdx = this.clipItemsRadioGroup.indexOf(menuItem);
 
+      if (itemIdx === -1) {
+        console.error(
+          "Clipboard Indicator: tried to remove a menuItem that is not in clipItemsRadioGroup",
+        );
+        return;
+      }
+
       if (event === "delete" && menuItem.currentlySelected) {
         this.#clearClipboard();
       }
@@ -839,15 +850,11 @@ const ClipboardIndicator = GObject.registerClass(
     }
 
     _removeOldestEntries() {
-      const origSize = this.clipItemsRadioGroup.length;
-
       while (this.clipItemsRadioGroup.length > MAX_REGISTRY_LENGTH) {
-        let oldest = this.clipItemsRadioGroup.shift();
+        // Do not shift the item out manually; _removeEntry handles the splice
+        // so clipItemsRadioGroup and the visual menu stay in sync.
+        let oldest = this.clipItemsRadioGroup[0];
         this._removeEntry(oldest);
-      }
-
-      if (this.clipItemsRadioGroup.length < origSize) {
-        this._updateCache();
       }
     }
 
@@ -868,6 +875,14 @@ const ClipboardIndicator = GObject.registerClass(
     }
 
     _onMenuItemSelectedAndMenuClose(menuItem, autoSet) {
+      const selectedIdx = this.clipItemsRadioGroup.indexOf(menuItem);
+      console.log(
+        "Clipboard Indicator: selected item at index",
+        selectedIdx,
+        "contents:",
+        menuItem.clipContents,
+      );
+
       this._onMenuItemSelected(menuItem, autoSet);
 
       // Ensure MOVE_ITEM_FIRST also applies when PASTE_ON_SELECT fast-path skips _refreshIndicator()
@@ -1524,8 +1539,15 @@ const ClipboardIndicator = GObject.registerClass(
     }
 
     #pasteItem(menuItem) {
+      const pastedIdx = this.clipItemsRadioGroup.indexOf(menuItem);
+      console.log(
+        "Clipboard Indicator: pasting item at index",
+        pastedIdx,
+        "contents:",
+        menuItem.clipContents,
+      );
+
       this.menu.close();
-      const currentlySelected = this._getCurrentlySelectedItem();
       this.preventIndicatorUpdate = true;
       this.#updateClipboard(menuItem.entry);
       this._pastingKeypressTimeout = setTimeout(() => {
@@ -1545,8 +1567,6 @@ const ClipboardIndicator = GObject.registerClass(
 
         this._pastingResetTimeout = setTimeout(() => {
           this.preventIndicatorUpdate = false;
-          if (currentlySelected && currentlySelected.entry)
-            this.#updateClipboard(currentlySelected.entry);
         }, 50);
       }, 50);
     }
@@ -1821,6 +1841,13 @@ const ClipboardIndicator = GObject.registerClass(
     }
 
     #updateClipboard(entry) {
+      console.log(
+        "Clipboard Indicator: updating clipboard to",
+        entry.isImage()
+          ? `[Image ${entry.asBytes().hash()}]`
+          : entry.getStringValue(),
+      );
+
       this.extension.clipboard.set_content(
         CLIPBOARD_TYPE,
         entry.mimetype(),
@@ -1860,11 +1887,7 @@ const ClipboardIndicator = GObject.registerClass(
               const effectiveType =
                 type === "UTF8_STRING" ? "text/plain;charset=utf-8" : type;
 
-              const entry = new ClipboardEntry(
-                effectiveType,
-                bytes.get_data(),
-                false,
-              );
+              const entry = new ClipboardEntry(effectiveType, bytes.get_data());
               if (CACHE_IMAGES && entry.isImage()) {
                 this.registry.writeEntryFile(entry).then(() => resolve(entry));
               } else {
