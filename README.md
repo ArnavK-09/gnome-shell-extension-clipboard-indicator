@@ -9,6 +9,9 @@
 
 ## What changed
 
+- **Ported to GNOME Shell 51** — upstream still crashes on 51, so this fork carries the fixes:
+  - `Clutter.get_default_backend()` was removed in mutter 51; the default seat is now reached via `global.stage.context.get_backend().get_default_seat()`
+  - the `vertical` property was removed from St widgets; these are now `orientation: Clutter.Orientation.VERTICAL`
 - **Removed the pin feature entirely** — no more pinning, no pinned section, no pinned-on-bottom toggle
 - **Removed dropdown action menu** — the "more actions" (⋯) dropdown that was unreliable and auto-closed the popup has been replaced with inline icons
 - **Inline delete button** — a small trash icon appears on the right side of each clipboard item on hover, with a circular hover highlight

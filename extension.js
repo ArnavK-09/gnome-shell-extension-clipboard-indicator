@@ -399,7 +399,7 @@ const ClipboardIndicator = GObject.registerClass(
       // Empty state section
       this.emptyStateSection = new St.BoxLayout({
         style_class: "clipboard-indicator-empty-state",
-        vertical: true,
+        orientation: Clutter.Orientation.VERTICAL,
       });
       this.emptyStateSection.add_child(
         new St.Icon({
@@ -1772,7 +1772,7 @@ const ClipboardIndicator = GObject.registerClass(
         style_class: "ci-edit-textbox",
         x_expand: true,
         y_expand: true,
-        vertical: true,
+        orientation: Clutter.Orientation.VERTICAL,
       });
 
       textBox.add_child(clutterText);
