@@ -15,7 +15,7 @@ update-po-files:
 	$(foreach file, $(wildcard locale/*/LC_MESSAGES/*.po), \
 		msgmerge $(file) clipboard-indicator.pot -o $(file);)
 
-INSTALLPATH_ABS = $(patsubst ~/,$(HOME)/,$(INSTALLPATH))
+INSTALLPATH_ABS = $(patsubst %/,%,$(subst ~,$(HOME),$(INSTALLPATH)))
 
 install: all
 	@if [ "$(CURDIR)" = "$(INSTALLPATH_ABS)" ]; then \
