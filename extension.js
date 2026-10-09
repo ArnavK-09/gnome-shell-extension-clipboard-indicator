@@ -1843,9 +1843,7 @@ const ClipboardIndicator = GObject.registerClass(
     #updateClipboard(entry) {
       console.log(
         "Clipboard Indicator: updating clipboard to",
-        entry.isImage()
-          ? `[Image ${entry.asBytes().hash()}]`
-          : entry.getStringValue(),
+        entry.isImage() ? `[Image ${entry.asBytes().hash()}]` : entry.getStringValue(),
       );
 
       this.extension.clipboard.set_content(
