@@ -1,6 +1,12 @@
+> [!NOTE]
+> This repository is a **personal fork** maintained by [**ArnavK-09**](https://github.com/ArnavK-09).
+> It is not affiliated with or endorsed by the upstream maintainer. Please report
+> fork-specific issues [here](https://github.com/ArnavK-09/gnome-shell-extension-clipboard-indicator/issues),
+> and upstream issues [there](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator/issues).
+
 # Clipboard Indicator (Fork)
 
-This is a fork of [clipboard-indicator](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator) by Tudmotu, modified by **ArnavK-09** for personal use.
+This is a fork of [clipboard-indicator](https://github.com/ArnavK-09/gnome-shell-extension-clipboard-indicator), modified by **ArnavK-09** for personal use.
 
 <p align="center">
     <img alt="screenshot" src="https://github.com/user-attachments/assets/537547f6-bfd7-4a7a-b2ef-b4905ef74ca3" />
@@ -32,11 +38,15 @@ cd gnome-shell-extension-clipboard-indicator
 
 #### Option A: Direct Install (Recommended)
 
-Compile the schemas and locales, then install directly into `~/.local/share/gnome-shell/extensions/clipboard-indicator@tudmotu.com/`:
+Compile the schemas and locales, then install directly into `~/.local/share/gnome-shell/extensions/clipboard-indicator@ArnavK-09/`:
 
 ```bash
 make install
 ```
+
+> [!WARNING]
+> `make install` deletes the target directory before copying. Keep your working copy
+> (and this repository) somewhere else, such as `~/dev/`, and install from there.
 
 #### Option B: Build as a ZIP Bundle
 
@@ -54,6 +64,9 @@ gnome-extensions install --force bundle.zip
 
 ---
 
-## Original
+## Upstream
 
-Based on the original work by Tudmotu: https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator
+Originally based on the work by [Tudmotu](https://github.com/Tudmotu):
+https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator
+
+Released under the MIT License — see [LICENSE.rst](LICENSE.rst).

@@ -1,5 +1,5 @@
 MODULES = *.js locale/*/LC_MESSAGES/*.mo metadata.json stylesheet.css LICENSE.rst README.md schemas/
-INSTALLPATH=~/.local/share/gnome-shell/extensions/clipboard-indicator@tudmotu.com/
+INSTALLPATH=~/.local/share/gnome-shell/extensions/clipboard-indicator@ArnavK-09/
 
 all: compile-locales compile-settings
 
@@ -15,7 +15,14 @@ update-po-files:
 	$(foreach file, $(wildcard locale/*/LC_MESSAGES/*.po), \
 		msgmerge $(file) clipboard-indicator.pot -o $(file);)
 
+INSTALLPATH_ABS = $(patsubst ~/,$(HOME)/,$(INSTALLPATH))
+
 install: all
+	@if [ "$(CURDIR)" = "$(INSTALLPATH_ABS)" ]; then \
+		echo "ERROR: refusing to install into the source repo (it would delete itself)."; \
+		echo "       Clone this repo outside $(INSTALLPATH_ABS) and run 'make install' there."; \
+		exit 1; \
+	fi
 	rm -rf $(INSTALLPATH)
 	mkdir -p $(INSTALLPATH)
 	cp -r --parents $(MODULES) $(INSTALLPATH)
